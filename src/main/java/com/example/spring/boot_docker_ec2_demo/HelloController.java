@@ -11,7 +11,7 @@ public class HelloController {
 
     @GetMapping("/")
     public String hello() {
-        return "Hello from Spring Boot + Docker + EC2 demo!";
+        return "Hello from Spring Boot + Docker + EC2 demo! Now is " + Instant.now().toString();
     }
 
     @GetMapping("/health")
