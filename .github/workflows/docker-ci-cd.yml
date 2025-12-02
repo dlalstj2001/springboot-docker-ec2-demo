@@ -50,22 +50,18 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}          # SSH private key (PEM 전체)
           port: 22                             # SSH 포트 (기본 22)
           script: |
-            set -e                             # 한 명령이라도 실패하면 즉시 종료
+            set -e                             
 
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/spring-docker-demo:latest
-            # Docker Hub에서 최신 이미지 가져오기
 
             docker ps -q  -f name=spring-docker-demo | xargs -r docker stop
-            # 실행 중인 동일 컨테이너가 있으면 stop
 
             docker ps -aq -f name=spring-docker-demo | xargs -r docker rm
-            # 중지된 동일 컨테이너가 있으면 rm
 
             docker run -d \
               --name spring-docker-demo \
               -p 8080:8080 \
               ${{ secrets.DOCKERHUB_USERNAME }}/spring-docker-demo:latest
-            # 최신 이미지로 새 컨테이너 실행
 
       # 3. 배포 성공/실패 디스코드 알림
       - name: Discord Notification(Success)
