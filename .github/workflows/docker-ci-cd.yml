@@ -47,7 +47,7 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}        # EC2 퍼블릭 IP
           username: ${{ secrets.EC2_USERNAME }} # SSH 로그인 계정 (ex: ubuntu)
-          key: ${{ secrets.EC2_KEY }}          # SSH private key (PEM 전체)
+          key: ${{ secrets.EC2_SSH_KEY }}          # SSH private key (PEM 전체)
           port: 22                             # SSH 포트 (기본 22)
           script: |
             set -e                             # 한 명령이라도 실패하면 즉시 종료
