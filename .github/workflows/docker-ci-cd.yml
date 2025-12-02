@@ -1,4 +1,4 @@
-name: Build and Push Docker Image (Spring Boot)
+name: Docker CI/CD (Spring Boot)
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
       - main
 
 jobs:
+  # 1. Docker 이미지 빌드 & Docker Hub 푸시
   build-and-push:
     runs-on: ubuntu-latest
 
@@ -26,11 +27,61 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # 4. 이미지 빌드 + 푸시
-      - name: Build and push
-        uses: docker/build-push-action@v5
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/springboot-docker-ec2-demo:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/spring-docker-demo:latest
+
+  # 2. EC2 배포
+  deploy:
+    needs: build-and-push          # build-and-push job이 성공해야만 배포 실행
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.2.4   # SSH로 EC2 접속해 script 블록을 원격 실행
+        with:
+          host: ${{ secrets.EC2_HOST }}        # EC2 퍼블릭 IP
+          username: ${{ secrets.EC2_USERNAME }} # SSH 로그인 계정 (ex: ubuntu)
+          key: ${{ secrets.EC2_KEY }}          # SSH private key (PEM 전체)
+          port: 22                             # SSH 포트 (기본 22)
+          script: |
+            set -e                             # 한 명령이라도 실패하면 즉시 종료
+
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/spring-docker-demo:latest
+            # Docker Hub에서 최신 이미지 가져오기
+
+            docker ps -q  -f name=spring-docker-demo | xargs -r docker stop
+            # 실행 중인 동일 컨테이너가 있으면 stop
+
+            docker ps -aq -f name=spring-docker-demo | xargs -r docker rm
+            # 중지된 동일 컨테이너가 있으면 rm
+
+            docker run -d \
+              --name spring-docker-demo \
+              -p 8080:8080 \
+              ${{ secrets.DOCKERHUB_USERNAME }}/spring-docker-demo:latest
+            # 최신 이미지로 새 컨테이너 실행
+
+      # 3. 배포 성공/실패 디스코드 알림
+      - name: Discord Notification(Success)
+        if: success()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "배포 성공"
+          description: "spring-docker-demo가 EC2에 배포되었습니다."
+          color: 0x00ff00
+
+      - name: Discord Notification(Fail)
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "배포 실패"
+          description: "배포 중 오류 발생. GitHub Actions 로그를 확인하세요."
+          color: 0xff0000
