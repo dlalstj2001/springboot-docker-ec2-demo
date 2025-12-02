@@ -60,7 +60,7 @@ jobs:
 
             docker run -d \
               --name spring-docker-demo \
-              -p 8080:8080 \
+              -p 80:8080 \
               ${{ secrets.DOCKERHUB_USERNAME }}/spring-docker-demo:latest
 
       # 3. 배포 성공/실패 디스코드 알림
