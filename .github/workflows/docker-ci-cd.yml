@@ -46,7 +46,7 @@ jobs:
         uses: appleboy/ssh-action@v1.2.4   # SSH로 EC2 접속해 script 블록을 원격 실행
         with:
           host: ${{ secrets.EC2_HOST }}        # EC2 퍼블릭 IP
-          username: ${{ secrets.EC2_USERNAME }} # SSH 로그인 계정 (ex: ubuntu)
+          username: ${{ secrets.EC2_USER }} # SSH 로그인 계정 (ex: ubuntu)
           key: ${{ secrets.EC2_SSH_KEY }}          # SSH private key (PEM 전체)
           port: 22                             # SSH 포트 (기본 22)
           script: |
